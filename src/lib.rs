@@ -29,7 +29,7 @@ mod ws_stream_io;
 pub use {
     error::WsErr,
     ws_event::{CloseEvent, WsEvent},
-    ws_message::WsMessage,
+    ws_message::{Message, WsMessage},
     ws_meta::WsMeta,
     ws_state::WsState,
     ws_stream::WsStream,
