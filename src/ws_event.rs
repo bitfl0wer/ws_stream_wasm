@@ -14,7 +14,7 @@ use crate::{import::*, WsErr};
 ///
 ///let program = async
 ///{
-///   let (mut ws, _wsio) = WsMeta::connect( "127.0.0.1:3012", None ).await
+///   let (mut ws, _wsio) = WsMeta::connect::<WsMessage>( "127.0.0.1:3012", None ).await
 ///
 ///      .expect_throw( "assume the connection succeeds" );
 ///
