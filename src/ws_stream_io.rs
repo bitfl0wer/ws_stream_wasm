@@ -1,4 +1,4 @@
-use crate::{import::*, Message, WsErr, WsMessage, WsStream};
+use crate::{import::*, Message, WsErr, WsStream};
 
 /// A wrapper around WsStream that converts errors into io::Error so that it can be
 /// used for io (like `AsyncRead`/`AsyncWrite`).
