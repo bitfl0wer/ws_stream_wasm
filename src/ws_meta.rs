@@ -1,4 +1,4 @@
-use crate::{import::*, notify, CloseEvent, WsErr, WsEvent, WsState, WsStream};
+use crate::{import::*, notify, CloseEvent, Message, WsErr, WsEvent, WsState, WsStream};
 
 /// The meta data related to a websocket. Allows access to the methods on the WebSocket API.
 /// This is split from the `Stream`/`Sink` so you can pass the latter to a combinator whilst
@@ -41,10 +41,10 @@ impl WsMeta {
     ///
     /// **Note**: Sending protocols to a server that doesn't support them will make the connection fail.
     //
-    pub async fn connect(
+    pub async fn connect<T: Message + 'static>(
         url: impl AsRef<str>,
         protocols: impl Into<Option<Vec<&str>>>,
-    ) -> Result<(Self, WsStream), WsErr> {
+    ) -> Result<(Self, WsStream<T>), WsErr> {
         let res = match protocols.into() {
             None => WebSocket::new(url.as_ref()),
 
