@@ -109,7 +109,8 @@ impl WsMeta {
         #[allow(trivial_casts)]
         //
         let on_close = Closure::wrap(Box::new(move |evt: JsCloseEvt| {
-            let c = WsEvent::Closed(CloseEvent {
+            #[allow(unused_qualifications)]
+            let c = WsEvent::Closed(crate::CloseEvent {
                 code: evt.code(),
                 reason: evt.reason(),
                 was_clean: evt.was_clean(),
