@@ -26,6 +26,8 @@ use {
     ws_stream_wasm::*,
 };
 
+use ws_stream_wasm::ReadyState;
+
 const URL: &str = "ws://127.0.0.1:3212/";
 
 // WsMeta::connect: Verify error when connecting to a wrong port
@@ -37,7 +39,7 @@ async fn connect_wrong_port() {
 
     info!("starting test: connect_wrong_port");
 
-    let err = WsMeta::connect("ws://127.0.0.1:33212/", None).await;
+    let err = WsMeta::connect::<WsMessage>("ws://127.0.0.1:33212/", None).await;
 
     assert!(err.is_err());
 
@@ -64,7 +66,7 @@ async fn connect_forbidden_port() {
 
     info!("starting test: connect_forbidden_port");
 
-    let err = WsMeta::connect("ws://127.0.0.1:6000/", None).await;
+    let err = WsMeta::connect::<WsMessage>("ws://127.0.0.1:6000/", None).await;
 
     assert!(err.is_err());
 
@@ -82,7 +84,7 @@ async fn connect_wrong_wss() {
 
     info!("starting test: connect_wrong_wss");
 
-    let err = WsMeta::connect("wss://127.0.0.1:3212/", None).await;
+    let err = WsMeta::connect::<WsMessage>("wss://127.0.0.1:3212/", None).await;
 
     assert!(err.is_err());
 
@@ -109,7 +111,7 @@ async fn connect_wrong_scheme() {
 
     info!("starting test: connect_wrong_scheme");
 
-    let err = WsMeta::connect("http://127.0.0.1:3212/", None).await;
+    let err = WsMeta::connect::<WsMessage>("http://127.0.0.1:3212/", None).await;
 
     assert!(err.is_err());
 
@@ -132,7 +134,7 @@ async fn state() {
 
     info!("starting test: state");
 
-    let (ws, wsio) = WsMeta::connect(URL, None)
+    let (ws, wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -159,7 +161,7 @@ async fn close_from_wsio() {
 
     info!("starting test: close_from_wsio");
 
-    let (ws, mut wsio) = WsMeta::connect(URL, None)
+    let (ws, mut wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -180,7 +182,7 @@ async fn url() {
 
     info!("starting test: url");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -196,7 +198,7 @@ async fn no_protocols() {
 
     info!("starting test: no_protocols");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -215,7 +217,7 @@ async fn protocols_server_accept_none()
 
     info!( "starting test: protocols_server_accept_none" );
 
-    let (ws, _wsio) = WsMeta::connect( URL, vec![ "chat" ] ).await.expect_throw( "Could not create websocket" );
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>( URL, vec![ "chat" ] ).await.expect_throw( "Could not create websocket" );
 
     assert_eq!( "", ws.protocol() );
 }
@@ -230,7 +232,7 @@ async fn close_twice() {
 
     info!("starting test: close_twice");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -256,7 +258,7 @@ async fn close_code_valid() {
 
     info!("starting test: close_code_valid");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -274,7 +276,7 @@ async fn close_code_invalid() {
 
     info!("starting test: close_code_invalid");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -292,7 +294,7 @@ async fn close_reason_valid() {
 
     info!("starting test: close_reason_valid");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -310,7 +312,7 @@ async fn close_reason_invalid_code() {
 
     info!("starting test: close_reason_invalid_code");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -328,7 +330,7 @@ async fn close_reason_invalid() {
 
     info!("starting test: close_reason_invalid");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 
@@ -346,7 +348,7 @@ async fn debug() {
 
     info!("starting test: debug");
 
-    let (ws, _wsio) = WsMeta::connect(URL, None)
+    let (ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 

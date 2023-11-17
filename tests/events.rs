@@ -27,7 +27,7 @@ async fn close_events() {
 
     info!("starting test: close_events");
 
-    let (mut ws, _wsio) = WsMeta::connect(URL, None)
+    let (mut ws, _wsio) = WsMeta::connect::<WsMessage>(URL, None)
         .await
         .expect_throw("Could not create websocket");
 

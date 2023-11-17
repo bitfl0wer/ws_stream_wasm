@@ -21,12 +21,13 @@ use crate::{import::*, *};
 /// if you need an example.
 ///
 //
+
 pub struct WsStream<T: Message> {
     ws: SendWrapper<Rc<WebSocket>>,
 
     // The queue of received messages
     //
-    queue: SendWrapper<Rc<RefCell<VecDeque<WsMessage>>>>,
+    queue: SendWrapper<Rc<RefCell<VecDeque<T>>>>,
 
     // Last waker of task that wants to read incoming messages to be woken up on a new message
     //
@@ -52,7 +53,25 @@ pub struct WsStream<T: Message> {
     closer: Option<SendWrapper<Pin<Box<dyn Future<Output = ()> + Send>>>>,
 }
 
-impl WsStream<WsMessage> {
+/// Verify the [WsState] of the connection.
+pub trait ReadyState {
+    /// Verify the [WsState] of the connection.
+    //
+    fn ready_state(&self) -> WsState;
+}
+
+impl<T: Message> ReadyState for WsStream<T> {
+    fn ready_state(&self) -> WsState {
+        self.ws
+            .ready_state()
+            .try_into()
+            // This can't throw unless the browser gives us an invalid ready state
+            //
+            .expect_throw("Convert ready state from browser API")
+    }
+}
+
+impl<T: Message + 'static> WsStream<T> {
     /// Create a new WsStream.
     //
     pub(crate) fn new(
@@ -77,7 +96,7 @@ impl WsStream<WsMessage> {
         #[allow(trivial_casts)]
         //
         let on_mesg = Closure::wrap(Box::new(move |msg_evt: MessageEvent| {
-            match WsMessage::try_from(msg_evt) {
+            match T::try_from(msg_evt) {
                 Ok(msg) => q2.borrow_mut().push_back(msg),
                 Err(err) => notify(ph2.clone(), WsEvent::WsErr(err)),
             }
@@ -140,17 +159,6 @@ impl WsStream<WsMessage> {
         }
     }
 
-    /// Verify the [WsState] of the connection.
-    //
-    pub fn ready_state(&self) -> WsState {
-        self.ws
-            .ready_state()
-            .try_into()
-            // This can't throw unless the browser gives us an invalid ready state
-            //
-            .expect_throw("Convert ready state from browser API")
-    }
-
     /// Access the wrapped [web_sys::WebSocket](https://docs.rs/web-sys/0.3.25/web_sys/struct.WebSocket.html) directly.
     ///
     /// _ws_stream_wasm_ tries to expose all useful functionality through an idiomatic rust API, so hopefully
@@ -167,18 +175,18 @@ impl WsStream<WsMessage> {
     /// Wrap this object in [`IoStream`]. `IoStream` implements `AsyncRead`/`AsyncWrite`/`AsyncBufRead`.
     /// **Beware**: that this will transparenty include text messages as bytes.
     //
-    pub fn into_io(self) -> IoStream<WsStreamIo, Vec<u8>> {
+    pub fn into_io(self) -> IoStream<WsStreamIo<T>, Vec<u8>> {
         IoStream::new(WsStreamIo::new(self))
     }
 }
 
-impl fmt::Debug for WsStream<WsMessage> {
+impl<T: Message> fmt::Debug for WsStream<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WsStream for connection: {}", self.ws.url())
     }
 }
 
-impl Drop for WsStream<WsMessage> {
+impl<T: Message> Drop for WsStream<T> {
     // We don't block here, just tell the browser to close the connection and move on.
     //
     fn drop(&mut self) {
@@ -204,8 +212,8 @@ impl Drop for WsStream<WsMessage> {
     }
 }
 
-impl Stream for WsStream<WsMessage> {
-    type Item = WsMessage;
+impl<T: Message> Stream for WsStream<T> {
+    type Item = T;
 
     // Currently requires an unfortunate copy from Js memory to WASM memory. Hopefully one
     // day we will be able to receive the MessageEvt directly in WASM.
@@ -231,7 +239,7 @@ impl Stream for WsStream<WsMessage> {
     }
 }
 
-impl Sink<WsMessage> for WsStream<WsMessage> {
+impl<T: Message> Sink<T> for WsStream<T> {
     type Error = WsErr;
 
     // Web API does not really seem to let us check for readiness, other than the connection state.
@@ -249,7 +257,7 @@ impl Sink<WsMessage> for WsStream<WsMessage> {
         }
     }
 
-    fn start_send(self: Pin<&mut Self>, item: WsMessage) -> Result<(), Self::Error> {
+    fn start_send(self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
         match self.ready_state() {
             WsState::Open => {
                 // The send method can return 2 errors:
@@ -259,15 +267,16 @@ impl Sink<WsMessage> for WsStream<WsMessage> {
                 // So if this returns an error, we will return ConnectionNotOpen. In principle
                 // we just checked that it's open, but this guarantees correctness.
                 //
-                match item {
-                    WsMessage::Binary(d) => self
-                        .ws
-                        .send_with_u8_array(&d)
-                        .map_err(|_| WsErr::ConnectionNotOpen)?,
-                    WsMessage::Text(s) => self
-                        .ws
-                        .send_with_str(&s)
-                        .map_err(|_| WsErr::ConnectionNotOpen)?,
+                if item.is_binary() {
+                    self.ws
+                        .send_with_u8_array(item.as_binary().as_ref().unwrap())
+                        .map_err(|_| WsErr::ConnectionNotOpen)?
+                } else if item.is_text() {
+                    self.ws
+                        .send_with_str(item.as_string().as_ref().unwrap())
+                        .map_err(|_| WsErr::ConnectionNotOpen)?
+                } else {
+                    unreachable!("WsMessage is neither text nor binary")
                 }
 
                 Ok(())
