@@ -1,9 +1,13 @@
+use std::fmt::Debug;
+
 use crate::{import::*, WsErr};
 
 /// Generic trait for different WebSocket message implementations.
 /// No matter which WebSocket message type is being used, the user can always access the
 /// underlying data with this common interface.
-pub trait Message: TryFrom<MessageEvent, Error = WsErr> + Into<Vec<u8>> + From<Vec<u8>> {
+pub trait Message:
+    TryFrom<MessageEvent, Error = WsErr> + Into<Vec<u8>> + From<Vec<u8>> + Debug
+{
     /// Returns the message as a string slice, if the message is in text format.
     fn as_text(&self) -> Option<&str>;
     /// Returns the message as a string, if the message is in text format.
