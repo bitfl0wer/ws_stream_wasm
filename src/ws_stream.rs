@@ -21,7 +21,7 @@ use crate::{import::*, *};
 /// if you need an example.
 ///
 //
-pub struct WsStream {
+pub struct WsStream<T: Message> {
     ws: SendWrapper<Rc<WebSocket>>,
 
     // The queue of received messages
@@ -52,7 +52,7 @@ pub struct WsStream {
     closer: Option<SendWrapper<Pin<Box<dyn Future<Output = ()> + Send>>>>,
 }
 
-impl WsStream {
+impl WsStream<WsMessage> {
     /// Create a new WsStream.
     //
     pub(crate) fn new(
@@ -172,13 +172,13 @@ impl WsStream {
     }
 }
 
-impl fmt::Debug for WsStream {
+impl fmt::Debug for WsStream<WsMessage> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WsStream for connection: {}", self.ws.url())
     }
 }
 
-impl Drop for WsStream {
+impl Drop for WsStream<WsMessage> {
     // We don't block here, just tell the browser to close the connection and move on.
     //
     fn drop(&mut self) {
@@ -204,7 +204,7 @@ impl Drop for WsStream {
     }
 }
 
-impl Stream for WsStream {
+impl Stream for WsStream<WsMessage> {
     type Item = WsMessage;
 
     // Currently requires an unfortunate copy from Js memory to WASM memory. Hopefully one
@@ -231,7 +231,7 @@ impl Stream for WsStream {
     }
 }
 
-impl Sink<WsMessage> for WsStream {
+impl Sink<WsMessage> for WsStream<WsMessage> {
     type Error = WsErr;
 
     // Web API does not really seem to let us check for readiness, other than the connection state.

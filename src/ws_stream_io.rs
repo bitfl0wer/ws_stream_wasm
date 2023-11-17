@@ -1,4 +1,4 @@
-use crate::{import::*, WsErr, WsStream};
+use crate::{import::*, Message, WsErr, WsMessage, WsStream};
 
 /// A wrapper around WsStream that converts errors into io::Error so that it can be
 /// used for io (like `AsyncRead`/`AsyncWrite`).
@@ -8,19 +8,19 @@ use crate::{import::*, WsErr, WsStream};
 //
 #[derive(Debug)]
 //
-pub struct WsStreamIo {
-    inner: WsStream,
+pub struct WsStreamIo<T: Message> {
+    inner: WsStream<T>,
 }
 
-impl WsStreamIo {
+impl<T: Message> WsStreamIo<T> {
     /// Create a new WsStreamIo.
     //
-    pub fn new(inner: WsStream) -> Self {
+    pub fn new(inner: WsStream<T>) -> Self {
         Self { inner }
     }
 }
 
-impl Stream for WsStreamIo {
+impl<T: Message> Stream for WsStreamIo<T> {
     type Item = Result<Vec<u8>, io::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -30,7 +30,7 @@ impl Stream for WsStreamIo {
     }
 }
 
-impl Sink<Vec<u8>> for WsStreamIo {
+impl<T: Message> Sink<Vec<u8>> for WsStreamIo<T> {
     type Error = io::Error;
 
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
