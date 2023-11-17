@@ -32,6 +32,7 @@ pub use {
     ws_message::{Message, WsMessage},
     ws_meta::WsMeta,
     ws_state::WsState,
+    ws_stream::ReadyState,
     ws_stream::WsStream,
     ws_stream_io::WsStreamIo,
 };
