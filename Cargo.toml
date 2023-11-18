@@ -16,7 +16,6 @@ send_wrapper = "^0.6"
 thiserror = "^1"
 wasm-bindgen = "^0.2"
 wasm-bindgen-futures = "^0.4"
-tokio-tungstenite = { version = "0.20.1", default-features = false, optional = true }
 
 [dependencies.async_io_stream]
 features = ["map_pharos"]
@@ -78,7 +77,6 @@ version = "^0.7"
 
 [features]
 tokio_io = ["async_io_stream/tokio_io"]
-tungstenite = ["dep:tokio-tungstenite"]
 
 [package]
 authors = ["Naja Melan <najamelan@autistici.org>"]
